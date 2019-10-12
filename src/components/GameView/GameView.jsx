@@ -4,6 +4,8 @@ import { GameRow } from '../GameRow/GameRow'
 
 import './GameView.css'
 
+export const UPDATE_PLAYER_LOCATION = 'UPDATE_PLAYER_LOCATION'
+
 const generateCells = (numCells) => {
   let cells = {}
   let tempCellCount = numCells
@@ -39,10 +41,10 @@ const generateGame = ({ numRows, cellsPerRow }) => {
     tempRowCount --
   }
 
-  return { rows }
+  return rows
 }
 
-const withPlayer = ({ rows }) => ({ cellId }) => {
+const withPlayer = (rows) => ({ cellId }) => {
   const [ rowIndex, cellIndex ] = cellId.split('-')
 
   rows[rowIndex].cells[cellIndex] = {
@@ -51,87 +53,125 @@ const withPlayer = ({ rows }) => ({ cellId }) => {
   }
 
 
-  return { rows }
+  return rows
 }
 
-const useArrowKeys = (updateGameState) => ({ code }) => {
-  let rowDelta = 0
-  let columnDelta = 0
+export const initialPlayerCellId = '8-8'
+const gameConfig = {
+  numRows: 15,
+  cellsPerRow: 15
+}
 
-  switch (code) {
-    case 'KeyW': {
-      console.log('Move up')
-      rowDelta = -1
-      break
-    }
-    case 'KeyS': {
-      console.log('Move down')
-      rowDelta = 1
-      break
-    }
-    case 'KeyA': {
-      console.log('Move left')
-      columnDelta = -1
-      break
-    }
-    case 'KeyD': {
-      console.log('Move right')
-      columnDelta = 1
-      break
+export const initialGameState = {
+  rows:  withPlayer(generateGame(gameConfig))({ cellId: initialPlayerCellId }),
+  currentPlayerCell: initialPlayerCellId
+}
+
+export function GameReducer (state, action) {
+  switch (action.type) {
+    case UPDATE_PLAYER_LOCATION: {
+      const { xDelta, yDelta } = action
+      const { currentPlayerCell, rows } = state
+
+      const [ currentRow, currentCol ] = currentPlayerCell.split('-')
+
+      const cellUpdates = [
+        {
+          rowId: parseInt(currentRow),
+          colId: parseInt(currentCol),
+          type: 'basic-tile'
+        },
+        {
+          rowId: parseInt(currentRow) + yDelta,
+          colId: parseInt(currentCol) + xDelta,
+          type: 'player'
+        }
+      ]
+
+      const updateBoard = (updates) => (updates.reduce((acc, { rowId, colId, type }) => {
+        return {
+          ...acc,
+          [rowId]: {
+            ...acc[rowId],
+            cells: {
+              ...acc[rowId].cells,
+              [colId]: {
+                ...acc[rowId].cells[colId],
+                type
+              }
+            }
+          }
+        }
+      }, { ...rows }))
+
+      const updatedState = {
+        ...state,
+        rows: updateBoard(cellUpdates),
+        currentPlayerCell: [(parseInt(currentRow) + yDelta), (parseInt(currentCol) + xDelta)].join('-')
+      }
+
+      console.log(updatedState)
+
+      return updatedState
     }
     default: {
-      console.log('Key has no effect')
-      break
+      throw new Error(`Action [${action.type}] not recognized by GameReducer`)
     }
   }
-
-  updateGameState(({ rows, currentPlayerCell }) => {
-    const [ prevRow, prevCol ] = currentPlayerCell.split('-')
-
-    const nextRow = parseInt(prevRow) + rowDelta
-    const nextCol = parseInt(prevCol) + columnDelta
-
-    const newRows = {
-      ...rows,
-      [nextRow]: {
-        ...rows[nextRow],
-        cells: {
-          ...rows[nextRow].cells,
-          [nextCol]: {
-            ...rows[nextRow].cells[nextCol],
-            type: 'player'
-          }
-        }
-      },
-      [parseInt(prevRow)]: {
-        ...rows[parseInt(prevRow)],
-        cells: {
-          ...rows[parseInt(prevRow)].cells,
-          [parseInt(prevCol)]: {
-            ...rows[parseInt(prevRow)].cells[parseInt(prevCol)],
-            type: 'basic-tile'
-          }
-        }
-      },
-    }
-
-    return {
-      rows: newRows,
-      currentPlayerCell: `${nextRow}-${nextCol}`
-    }
-  })
 }
 
-export const GameView = ({ gameConfig }) => {
-  const { rows } = withPlayer(generateGame(gameConfig))({ cellId: '8-8' })
+export const GameView = (props) => {
+  const [ gameState, dispatch ] = React.useReducer(GameReducer, initialGameState)
 
-  const [ gameState, updateGameState ] = React.useState({ rows, currentPlayerCell: '8-8' })
+  React.useEffect(() => {
+    const updateGameState = (xDelta, yDelta) => {
+      dispatch({
+        type: UPDATE_PLAYER_LOCATION,
+        xDelta,
+        yDelta
+      })
+    }
 
-  // React.useEffect(() => {
-  window.addEventListener('keydown', useArrowKeys(updateGameState))
-  // }, [])
+    const handleKeyChange = ({ code }) => {
+      let yDelta = 0
+      let xDelta = 0
 
-  console.log(gameState)
+      switch (code) {
+        case 'KeyW': {
+          console.log('Move up')
+          yDelta = -1
+          break
+        }
+        case 'KeyS': {
+          console.log('Move down')
+          yDelta = 1
+          break
+        }
+        case 'KeyA': {
+          console.log('Move left')
+          xDelta = -1
+          break
+        }
+        case 'KeyD': {
+          console.log('Move right')
+          xDelta = 1
+          break
+        }
+        default: {
+          console.log('Key has no effect')
+          break
+        }
+      }
+
+      updateGameState(xDelta, yDelta)
+    }
+
+    window.addEventListener('keyup', handleKeyChange)
+
+    return () => {
+      window.removeEventListener('keyup', handleKeyChange)
+    }
+  }, [dispatch])
 
   return (
     <div className="GameView">

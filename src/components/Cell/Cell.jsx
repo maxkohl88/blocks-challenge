@@ -8,10 +8,6 @@ export const Cell = ({ type }) => {
     type
   ].join(' ')
 
-  React.useEffect(() => {
-    console.log(`type changed - ${type}`)
-  }, [type])
-
   return (
     <div className={compClassName}></div>
   )
