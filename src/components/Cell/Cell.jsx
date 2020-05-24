@@ -1,14 +1,15 @@
 import React from 'react'
 
+import { cellMap } from '../Cells/cellMap'
+
 import './Cell.css'
 
-export const Cell = ({ type }) => {
-  const compClassName = [
-    "Cell",
-    type
-  ].join(' ')
+export const Cell = React.memo(({ type }) => {
+  const CellContent = cellMap[type]
 
   return (
-    <div className={compClassName}></div>
+    <div className='cell'>
+      <CellContent />
+    </div>
   )
-}
+})
