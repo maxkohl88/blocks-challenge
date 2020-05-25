@@ -8,8 +8,7 @@ import { useKeyboard } from '../../hooks/useKeyboard/useKeyboard'
 import './GameView.css'
 
 
-export const GameView = (props) => {
-  // const [ gameState, dispatch ] = React.useReducer(GameReducer, initialGameState)
+export const GameView = () => {
   const { updatePlayerLocation, rows } = useGame()
 
   useKeyboard({ handleKeyChange: updatePlayerLocation })

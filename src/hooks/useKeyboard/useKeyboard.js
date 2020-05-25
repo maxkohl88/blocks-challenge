@@ -37,5 +37,5 @@ export const useKeyboard = ({ handleKeyChange }) => {
     return () => {
       window.removeEventListener('keypress', onKeyChange)
     }
-  }, [])
+  }, [handleKeyChange])
 }
