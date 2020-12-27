@@ -9,8 +9,16 @@ import {
 export function GameReducer (state, action) {
   switch (action.type) {
     case UPDATE_PLAYER_LOCATION: {
-      const { currentPlayerCell, rows, config, canMove, inventory } = state
+      const {
+        currentPlayerCell,
+        rows,
+        config,
+        canMove,
+        inventory,
+        currentChipCount
+      } = state
 
+      // SS 1: return state if cannot move
       if (!canMove) {
         return state
       }
@@ -32,6 +40,7 @@ export function GameReducer (state, action) {
           ((currentColNumeric + xDelta) < 0)
       }
 
+      // SS 2: return state if move is over edge
       if (movesOverEdge()) {
         return state
       }
@@ -48,9 +57,11 @@ export function GameReducer (state, action) {
         return nextPlayerCell.type === 'wall'
       }
 
+      // SS 3: return state if moves into wall
       if (movesIntoWall()) {
         return state
       }
+
 
       const movesIntoFilm = () => {
         const currentRowNumeric = parseInt(currentRow)
@@ -62,6 +73,22 @@ export function GameReducer (state, action) {
         const nextPlayerCell = rows[nextRowNumeric].cells[nextColNumeric]
 
         return nextPlayerCell.type === 'film'
+      }
+
+      if (movesIntoFilm() && currentChipCount != 0) {
+        return state
+      }
+
+      const movesIntoChip = () => {
+        const currentRowNumeric = parseInt(currentRow)
+        const currentColNumeric = parseInt(currentCol)
+
+        const nextRowNumeric = currentRowNumeric + yDelta
+        const nextColNumeric = currentColNumeric + xDelta
+
+        const nextPlayerCell = rows[nextRowNumeric].cells[nextColNumeric]
+
+        return nextPlayerCell.type === 'chip' ? nextPlayerCell : false
       }
 
       const movesIntoExit = () => {
@@ -78,6 +105,7 @@ export function GameReducer (state, action) {
 
       const hasFilm = () => inventory.some((inv) => inv.type === 'film')
 
+      // SS 4: if moving into exit and film not collected, return state
       if (movesIntoExit() && !hasFilm()) {
         return state
       }
@@ -107,6 +135,19 @@ export function GameReducer (state, action) {
         inventory[0] = { type: 'film' }
       }
 
+      const collectedChipCell = movesIntoChip()
+      let nextChipCount = currentChipCount
+
+      if (collectedChipCell) {
+        cellUpdates.unshift({
+          rowId: parseInt(currentRow) + yDelta, // set chip to basic tile
+          colId: parseInt(currentCol) + xDelta, // set chip to basic tile
+          type: 'basic-tile'
+        })
+
+        nextChipCount = nextChipCount - 1
+      }
+
       const updateBoard = (updates) => (updates.reduce((acc, { rowId, colId, type }) => {
         return {
           ...acc,
@@ -129,6 +170,7 @@ export function GameReducer (state, action) {
         ...state,
         rows: updateBoard(cellUpdates),
         currentPlayerCell: [(parseInt(currentRow) + yDelta), (parseInt(currentCol) + xDelta)].join('-'),
+        currentChipCount: nextChipCount,
         win: isWin,
         inProgress: !isWin,
         canMove: !isWin

@@ -14,7 +14,7 @@ import {
   UPDATE_GAME_TIME
 } from '../../actions/GameActions'
 
-import { initialGameState } from '../../components/GameView/config'
+import { initialGameState } from './config'
 
 import { GameReducer } from '../../reducers/GameReducer/GameReducer'
 

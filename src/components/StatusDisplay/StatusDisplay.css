@@ -1,0 +1,23 @@
+.StatusDisplay {
+  width: 150px;
+  font-size: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.StatusDisplay__Label {
+  width: 150px;
+  color: red;
+  text-align: center;
+}
+
+.StatusDisplay__Status {
+  width: 150px;
+  height: 75px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0px 0px 2px 5px gray;
+}

@@ -91,6 +91,25 @@ const withFilm = ({ cellId }) => (rows) => {
   return rows
 }
 
+const withChips = ({ chipIds }) => (rows) => {
+  for (let rowId of Object.keys(rows)) {
+    const row = rows[rowId]
+
+    for (let cellId of Object.keys(row.cells)) {
+      const coordinateId = `${rowId}-${cellId}`
+
+      if (chipIds.includes(coordinateId)) {
+        rows[rowId].cells[cellId] = {
+          ...rows[rowId].cells[cellId],
+          type: 'chip'
+        }
+      }
+    }
+  }
+
+  return rows
+}
+
 export const initialPlayerCellId = '8-8'
 export const initialExitCellId = '12-12'
 export const initialWallIds = [
@@ -125,6 +144,12 @@ export const initialWallIds = [
   '13-12',
   '13-13'
 ]
+
+const initialChipIds = [
+  '11-8',
+  '12-6'
+]
+
 const initialFilmCellId = '10-5'
 
 const gameConfig = {
@@ -136,17 +161,22 @@ const pipeline = [
   withPlayer({ cellId: initialPlayerCellId }),
   withExit({ cellId: initialExitCellId }),
   withWalls({ wallIds: initialWallIds }),
-  withFilm({ cellId: initialFilmCellId })
+  withFilm({ cellId: initialFilmCellId }),
+  withChips({ chipIds: initialChipIds })
 ]
 
 const generateRows = (baseRows) => pipeline.reduce((acc, transform) => {
   return transform(acc)
 }, baseRows)
 
+// Level One
 export const initialGameState = {
   rows: generateRows(generateGame(gameConfig)),
   currentPlayerCell: initialPlayerCellId,
   config: gameConfig,
+  initialChipCount: initialChipIds.length,
+  currentChipCount: initialChipIds.length,
+  level: 1,
   inProgress: false,
   win: false,
   canMove: true,
